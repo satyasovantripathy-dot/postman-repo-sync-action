@@ -43,10 +43,23 @@ describe('repo-sync endpoint profile defaults', () => {
       fallbackBaseUrl: 'https://go.postman-beta.co/_api',
       iapubBaseUrl: 'https://iapub.postman.co'
     });
-    expect(resolvePostmanEndpointProfile('prod', 'eu', {}).apiBaseUrl).toBe(
-      'https://api.eu.postman.com'
-    );
     expect(POSTMAN_ENDPOINT_PROFILES.prod.apiBaseUrl).toBe('https://api.getpostman.com');
+  });
+
+  it('routes every identity and gateway host to the EU stack for region eu', () => {
+    const eu = resolvePostmanEndpointProfile('prod', 'eu', {});
+    expect(eu).toMatchObject({
+      apiBaseUrl: 'https://api.eu.postman.com',
+      bifrostBaseUrl: 'https://bifrost-premium-https.gw.eu.postman.com',
+      fallbackBaseUrl: 'https://go.eu.postman.co/_api',
+      iapubBaseUrl: 'https://iapub.eu.postman.co'
+    });
+    // An EU-minted token is rejected by US hosts, so no credential-bearing host
+    // may remain on the US profile.
+    const us = resolvePostmanEndpointProfile('prod', 'us', {});
+    for (const key of ['apiBaseUrl', 'bifrostBaseUrl', 'fallbackBaseUrl', 'iapubBaseUrl'] as const) {
+      expect(eu[key], key).not.toBe(us[key]);
+    }
   });
 
   it('still rejects beta+eu with the emulator armed', () => {

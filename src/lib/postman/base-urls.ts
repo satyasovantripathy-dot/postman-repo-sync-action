@@ -35,6 +35,20 @@ export const POSTMAN_ENDPOINT_PROFILES: Record<PostmanStack, PostmanEndpointProf
 };
 
 /**
+ * EU data-residency stack. EU is a separate identity and gateway stack: a token
+ * minted on api.eu.postman.com is only valid on these hosts and is rejected
+ * (iapub 401, Bifrost 403) by the US ones. Applied on top of the prod profile
+ * when postman-region=eu. workerBaseUrl has no confirmed EU counterpart and is
+ * left on the prod value.
+ */
+const EU_PROD_ENDPOINTS: Partial<PostmanEndpointProfile> = {
+  apiBaseUrl: 'https://api.eu.postman.com',
+  bifrostBaseUrl: 'https://bifrost-premium-https.gw.eu.postman.com',
+  fallbackBaseUrl: 'https://go.eu.postman.co/_api',
+  iapubBaseUrl: 'https://iapub.eu.postman.co'
+};
+
+/**
  * Test-only endpoint override seam, mirroring the bootstrap action's contract
  * exactly (see postman-bootstrap-action src/lib/postman/base-urls.ts). Inert
  * without env: absent EMULATOR_PROFILE_ENV preserves live hosts, and any
@@ -125,7 +139,7 @@ export function resolvePostmanEndpointProfile(
   }
   const profile =
     region === 'eu'
-      ? { ...POSTMAN_ENDPOINT_PROFILES[stack], apiBaseUrl: 'https://api.eu.postman.com' }
+      ? { ...POSTMAN_ENDPOINT_PROFILES[stack], ...EU_PROD_ENDPOINTS }
       : POSTMAN_ENDPOINT_PROFILES[stack];
   const profileName = readEndpointEnv(env, EMULATOR_PROFILE_ENV);
   if (!profileName) {
